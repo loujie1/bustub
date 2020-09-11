@@ -44,6 +44,67 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
   // 2.     If R is dirty, write it back to the disk.
   // 3.     Delete R from the page table and insert P.
   // 4.     Update P's metadata, read in the page content from disk, and then return a pointer to P.
+  pg_latch_.lock();
+  pt_latch_.lock();
+
+  if(page_table_.find(page_id)!= page_table_.end()){
+    frame_id_t target = page_table_[page_id];
+
+    replacer_->Pin(target);
+    pages_[target].pin_count_++;
+
+    pg_latch_.unlock();
+    pt_latch_.unlock();
+
+    LOG_INFO("Fetch page %d, frame %d from buffer pool", page_id, target);
+    return &pages_[target];
+  }
+  // Find a replacement page R
+  else{
+    fl_latch_.lock();
+    frame_id_t target;
+
+    if(!free_list_.empty()){
+      target = free_list_.front();
+      free_list_.pop_front();
+    }else{
+      if(!replacer_->Victim(&target)) {
+        LOG_ERROR("ERROR: No victim page found");
+        fl_latch_.unlock();
+        pt_latch_.unlock();
+        pg_latch_.unlock();
+        return nullptr;
+      }
+    }
+    fl_latch_.unlock();
+
+    page_id_t target_page_id = pages_[target].GetPageId();
+
+    if(pages_[target].IsDirty()){
+      if(!FlushPageImpl(target_page_id)) {
+        pt_latch_.unlock();
+        pg_latch_.unlock();
+        LOG_ERROR("Can't flush page: %d into disk", target_page_id);
+        return nullptr;
+      }
+    }
+    // Pin page and update page's metadata
+    replacer_->Pin(target);
+    pages_[target].pin_count_++;
+
+    page_table_.erase(target_page_id);
+    page_table_.insert({page_id, target});
+
+    disk_manager_->ReadPage(page_id, pages_[target].data_);
+    pages_[target].page_id_ = page_id;
+    pages_[target].is_dirty_ = false;
+
+    pt_latch_.unlock();
+    pg_latch_.unlock();
+
+    LOG_INFO("Fetch page %d from replacer/free list", page_id);
+    return &pages_[target];
+  }
 
   return nullptr;
 }

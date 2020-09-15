@@ -84,7 +84,6 @@ class HashTableBlockPage {
    * @return true if the index is occupied, false otherwise
    */
   bool IsOccupied(slot_offset_t bucket_ind) const;
-
   /**
    * Returns whether or not an index is readable (valid key/value pair)
    *

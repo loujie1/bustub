@@ -86,6 +86,8 @@ class LinearProbeHashTable : public HashTable<KeyType, ValueType, KeyComparator>
    */
   size_t GetSize();
 
+  void GetIndex(const KeyType &key, const size_t &numBlocks, size_t &index, size_t &block_ind, size_t &bucket_ind);
+
  private:
   // member variable
   page_id_t header_page_id_;

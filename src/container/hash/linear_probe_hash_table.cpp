@@ -58,11 +58,14 @@ namespace bustub {
     template<typename KeyType, typename ValueType, typename KeyComparator>
     bool HASH_TABLE_TYPE::GetValue(Transaction *transaction, const KeyType &key, std::vector<ValueType> *result) {
         table_latch_.RLock();
-        // Fetch the header page.
+
+        /*
         std::ostringstream buffer;
         buffer << "Try to get value for key:  " << key;
         LOG_INFO("%s", buffer.str().c_str());
+        */
 
+        // Fetch the header page.
         auto header_page_p = buffer_pool_manager_->FetchPage(header_page_id_);
         header_page_p->RLatch();
         auto header_page_t = reinterpret_cast<HashTableHeaderPage * >(header_page_p->GetData());
@@ -132,6 +135,7 @@ namespace bustub {
     template<typename KeyType, typename ValueType, typename KeyComparator>
     bool HASH_TABLE_TYPE::Insert(Transaction *transaction, const KeyType &key, const ValueType &value) {
         table_latch_.RLock();
+        /*
         std::ostringstream buffer;
         buffer << "Try to insert" << key << ", " << value;
         LOG_INFO("%s", buffer.str().c_str());
@@ -139,36 +143,37 @@ namespace bustub {
         std::ostringstream buffer_r;
         buffer_r << "Try to get header_r_latch: " << key << ", " << value;
         LOG_INFO("%s", buffer_r.str().c_str());
+        */
 
         auto header_page_p = buffer_pool_manager_->FetchPage(header_page_id_);
         header_page_p->RLatch();
-        LOG_INFO("Got header_r_latch!");
+        LOG_INFO("Got header_Rlatch!");
 
 
         auto header_page_t = reinterpret_cast<HashTableHeaderPage * >(header_page_p->GetData());
 
         size_t index, bucket_ind, block_ind;
         GetIndex(key, header_page_t->NumBlocks(), index, block_ind, bucket_ind);
-
+        /*
         std::ostringstream buffer_index;
         buffer_index << "The index for key: " << key << ", "  << " is found " << "at block: " << block_ind
                      << "bucket : " << bucket_ind;
         LOG_INFO("%s", buffer_index.str().c_str());
-
+        */
         page_id_t block_page_id = header_page_t->GetBlockPageId(block_ind);
         auto block_page_p = buffer_pool_manager_->FetchPage(block_page_id);
         LOG_INFO("TRY to get block_Wlatch");
         block_page_p->WLatch();
-        LOG_INFO("Got block_WLATCH!");
+        LOG_INFO("Got block_WLatch!");
         auto block_page_t = reinterpret_cast<HashTableBlockPage<KeyType, ValueType, KeyComparator> *>(block_page_p->GetData());
 
         while (!block_page_t->Insert(bucket_ind, key, value)) {
-
+            /*
             std::ostringstream buffer_false;
             buffer_false << "The <key,value>: " << key << ", " << value << " can't be inserted(congestion) " << "at block: " << block_page_id
                    << "bucket : " << bucket_ind;
             LOG_INFO("%s", buffer_false.str().c_str());
-
+            */
             // If there is already an identical <k,v> pair, insertion is to be terminated.
             if (comparator_(key, block_page_t->KeyAt(bucket_ind))==0 && value == block_page_t->ValueAt(bucket_ind)) {
                 block_page_p->WUnlatch();
@@ -218,12 +223,12 @@ namespace bustub {
                 block_page_t = reinterpret_cast<HashTableBlockPage<KeyType, ValueType, KeyComparator> *>(block_page_p->GetData());
             }
         }
-
+        /*
         std::ostringstream buffer_suc;
         buffer_suc << "The <key,value>: " << key << ", " << value << " is inserted" << "at block: " << block_ind
                << "bucket : " << bucket_ind;
         LOG_INFO("%s", buffer_suc.str().c_str());
-
+        */
 
         block_page_p->WUnlatch();
         header_page_p->RUnlatch();

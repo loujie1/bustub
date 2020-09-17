@@ -56,7 +56,7 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
     pg_latch_.unlock();
     pt_latch_.unlock();
 
-    LOG_INFO("Fetch page %d, frame %d from buffer pool", page_id, target);
+    //LOG_INFO("Fetch page %d, frame %d from buffer pool", page_id, target);
     return &pages_[target];
   }
   // Find a replacement page R
@@ -69,7 +69,7 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
       free_list_.pop_front();
     }else{
       if(!replacer_->Victim(&target)) {
-        LOG_ERROR("ERROR: No victim page found");
+        //LOG_ERROR("ERROR: No victim page found");
         fl_latch_.unlock();
         pt_latch_.unlock();
         pg_latch_.unlock();
@@ -84,7 +84,7 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
       if(!FlushPageImpl(target_page_id)) {
         pt_latch_.unlock();
         pg_latch_.unlock();
-        LOG_ERROR("Can't flush page: %d into disk", target_page_id);
+        //LOG_ERROR("Can't flush page: %d into disk", target_page_id);
         return nullptr;
       }
     }
@@ -102,7 +102,7 @@ Page *BufferPoolManager::FetchPageImpl(page_id_t page_id) {
     pt_latch_.unlock();
     pg_latch_.unlock();
 
-    LOG_INFO("Fetch page %d from replacer/free list", page_id);
+    //LOG_INFO("Fetch page %d from replacer/free list", page_id);
     return &pages_[target];
   }
 
@@ -122,7 +122,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
 
   if(pages_[target].GetPinCount() <= 0){
     pg_latch_.unlock();
-    LOG_ERROR("Unpin page %d failed, pincnt <= 0", page_id);
+    //LOG_ERROR("Unpin page %d failed, pincnt <= 0", page_id);
     return false;
   }else {
     pages_[target].pin_count_--;
@@ -133,7 +133,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
       replacer_->Unpin(target);
     }
     pg_latch_.unlock();
-    LOG_INFO("Unpin page %d from bf, present pin_cnt: %d", page_id, pages_[target].pin_count_);
+    //LOG_INFO("Unpin page %d from bf, present pin_cnt: %d", page_id, pages_[target].pin_count_);
     return true;
   }
 }
@@ -149,14 +149,14 @@ bool BufferPoolManager::FlushPageImpl(page_id_t page_id) {
     frame_id_t target = page_table_[page_id];
     // Pin the page and now working on it.
     if(!pages_[target].IsDirty()){
-      LOG_INFO("Flush page %d : page is not dirty", page_id);
+      //LOG_INFO("Flush page %d : page is not dirty", page_id);
       return true;
     }
 
     disk_manager_->WritePage(page_id, pages_[target].data_);
     pages_[target].is_dirty_ = false;
 
-    LOG_INFO("Flush page %d : page was dirty", page_id);
+    //LOG_INFO("Flush page %d : page was dirty", page_id);
     return true;
   }
 }
@@ -188,7 +188,7 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
     pt_latch_.unlock();
     pg_latch_.unlock();
 
-    LOG_INFO("New page %d allocated from free list", *page_id);
+    //LOG_INFO("New page %d allocated from free list", *page_id);
     return &pages_[free_frame];
   }
   // Allocate a new page with a replacement frame evicted.
@@ -200,7 +200,7 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
       pt_latch_.unlock();
       pg_latch_.unlock();
 
-      LOG_ERROR("No available space in buffer pool now: No victim can be found.");
+      //LOG_ERROR("No available space in buffer pool now: No victim can be found.");
       return nullptr;
     }
 
@@ -208,7 +208,7 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
       if(!FlushPageImpl(pages_[victim].page_id_)) {
         pt_latch_.unlock();
         pg_latch_.unlock();
-        LOG_ERROR("Can't flush page: %d into disk", pages_[victim].page_id_);
+        //LOG_ERROR("Can't flush page: %d into disk", pages_[victim].page_id_);
         return nullptr;
       }
     }
@@ -227,7 +227,7 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
     pt_latch_.unlock();
     pg_latch_.unlock();
 
-    LOG_INFO("New page %d allocated from another page %d evicted", *page_id, victim_page_id);
+    //LOG_INFO("New page %d allocated from another page %d evicted", *page_id, victim_page_id);
     return &pages_[victim];
   }
 }
@@ -244,7 +244,7 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
     pt_latch_.unlock();
     pg_latch_.unlock();
 
-    LOG_INFO("Delete page: %d: succeed, page is not in buffer pool.", page_id);
+    //LOG_INFO("Delete page: %d: succeed, page is not in buffer pool.", page_id);
     return true;
   }
   else{
@@ -256,7 +256,7 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
       pt_latch_.unlock();
       pg_latch_.unlock();
 
-      LOG_ERROR("Delete page: %d: failed, someone is using the page.", page_id);
+      //LOG_ERROR("Delete page: %d: failed, someone is using the page.", page_id);
       return false;
     }else{  // Delete the page from buffer pool
       page_table_.erase(page_id);
@@ -272,7 +272,7 @@ bool BufferPoolManager::DeletePageImpl(page_id_t page_id) {
       pg_latch_.unlock();
       pt_latch_.unlock();
 
-      LOG_INFO("Delete page %d from buffer pool: succeed.", page_id);
+      //LOG_INFO("Delete page %d from buffer pool: succeed.", page_id);
       return true;
     }
   }
@@ -286,12 +286,12 @@ void BufferPoolManager::FlushAllPagesImpl() {
   for(size_t i = 0; i < pool_size_; ++i){
     if(pages_[i].IsDirty()){
       if(!FlushPageImpl(pages_[i].page_id_)) {
-        LOG_ERROR("Can't flush page: %d into disk", pages_[i].page_id_);
+        //LOG_ERROR("Can't flush page: %d into disk", pages_[i].page_id_);
       }
     }
   }
   pg_latch_.unlock();
-  LOG_INFO("All pages flushed.");
+  //LOG_INFO("All pages flushed.");
 }
 
 }  // namespace bustub

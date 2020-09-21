@@ -60,7 +60,7 @@ class SimpleCatalog {
     tables_.insert({table_oid, static_cast<std::unique_ptr<TableMetadata>>(table_metadata)});
     names_.insert({table_name, table_oid});
 
-    return nullptr;
+    return table_metadata;
   }
 
   /** @return table metadata by name */

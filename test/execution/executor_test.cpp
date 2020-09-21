@@ -125,6 +125,7 @@ class ExecutorTest : public ::testing::Test {
 TEST_F(ExecutorTest, DISABLED_SimpleSeqScanTest) {
   // SELECT colA, colB FROM test_1 WHERE colA < 500
   TableMetadata *table_info = GetExecutorContext()->GetCatalog()->GetTable("test_1");
+  LOG_DEBUG("table initialized.");
   Schema &schema = table_info->schema_;
   auto *colA = MakeColumnValueExpression(schema, 0, "colA");
   auto *colB = MakeColumnValueExpression(schema, 0, "colB");

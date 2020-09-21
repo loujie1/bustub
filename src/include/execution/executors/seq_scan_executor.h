@@ -24,23 +24,26 @@ namespace bustub {
 /**
  * SeqScanExecutor executes a sequential scan over a table.
  */
-class SeqScanExecutor : public AbstractExecutor {
- public:
-  /**
-   * Creates a new sequential scan executor.
-   * @param exec_ctx the executor context
-   * @param plan the sequential scan plan to be executed
-   */
-  SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNode *plan);
+    class SeqScanExecutor : public AbstractExecutor {
+    public:
+        /**
+         * Creates a new sequential scan executor.
+         * @param exec_ctx the executor context
+         * @param plan the sequential scan plan to be executed
+         */
+        SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNode *plan);
 
-  void Init() override;
+        void Init() override;
 
-  bool Next(Tuple *tuple) override;
+        bool Next(Tuple *tuple) override;
 
-  const Schema *GetOutputSchema() override { return plan_->OutputSchema(); }
+        const Schema *GetOutputSchema() override { return plan_->OutputSchema(); }
 
- private:
-  /** The sequential scan plan node to be executed. */
-  const SeqScanPlanNode *plan_;
-};
+    private:
+        /** The sequential scan plan node to be executed. */
+        const SeqScanPlanNode *plan_;
+        TableHeap *table_heap_;
+        std::unique_ptr<TableIterator> iterator_;
+
+    };
 }  // namespace bustub
